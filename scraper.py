@@ -1,14 +1,13 @@
 import requests
 import json
 import os
+import sys # 👈 Importamos sys para poder detener el script con error
 from datetime import datetime
 
-# ⚠️ REEMPLAZA ESTA URL con la que obtuviste en el Paso 1 (F12 > Network)
-# Ejemplo: "https://api.resultados.onpe.gob.pe/elecciones/presidenciales/v1/..."
+# ⚠️ Asegúrate de tener la URL correcta aquí:
 API_URL = "https://resultadoelectoral.onpe.gob.pe/presentacion-backend/eleccion-presidencial/participantes-ubicacion-geografica-nombre?idEleccion=10&tipoFiltro=eleccion"
 
 def extraer_datos_onpe():
-    # Usamos headers para simular que somos un navegador Chrome real y evitar que nos bloqueen
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -18,17 +17,14 @@ def extraer_datos_onpe():
     print(f"[{datetime.now()}] Iniciando extracción de datos de la ONPE...")
 
     try:
-        # Hacemos la petición a la API
         respuesta = requests.get(API_URL, headers=headers, timeout=15)
-        respuesta.raise_for_status() # Lanza un error si la página responde 403, 404, 500, etc.
+        respuesta.raise_for_status() 
 
         datos_json = respuesta.json()
 
-        # Creamos una carpeta llamada 'api' si no existe, para guardar los datos de forma ordenada
         os.makedirs("api", exist_ok=True)
         ruta_archivo = "api/resultados_presidenciales.json"
 
-        # Guardamos la data extraída en nuestro propio archivo
         with open(ruta_archivo, "w", encoding="utf-8") as archivo:
             json.dump(datos_json, archivo, ensure_ascii=False, indent=2)
 
@@ -36,8 +32,10 @@ def extraer_datos_onpe():
 
     except requests.exceptions.RequestException as e:
         print(f"❌ Error de conexión al intentar obtener los datos: {e}")
+        sys.exit(1) # 👈 Detiene GitHub Actions inmediatamente
     except json.JSONDecodeError:
         print("❌ Error: La respuesta de la ONPE no es un JSON válido. Revisa la URL.")
+        sys.exit(1) # 👈 Detiene GitHub Actions inmediatamente
 
 if __name__ == "__main__":
     extraer_datos_onpe()
